@@ -1,0 +1,23 @@
+# Secretos: nunca subir a git (cualquier .env en cualquier carpeta)
+.env
+**/.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Datos locales
+backend/app.db
+backend/uploads/
+
+# Dependencias y compilados
+.venv/
+**/.venv/
+**/__pycache__/
+frontend/node_modules/
+frontend/dist/
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

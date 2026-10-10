@@ -1,0 +1,27 @@
+# Levanta un MySQL local para desarrollo. No es necesario si sigues con SQLite.
+#
+# Las contraseñas NO están escritas aquí: se leen del archivo .env de la raíz
+# del proyecto. Genéralas (aleatorias) con, desde la carpeta backend:
+#   python scripts/generate_secrets.py --mysql
+# y luego, desde la raíz del proyecto:
+#   docker compose -f docker-compose.mysql.yml up -d
+#
+# Si falta alguna contraseña, docker compose se detiene con un error en vez
+# de arrancar con un valor por defecto.
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: agente_didactico
+      MYSQL_USER: agente_user
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Falta MYSQL_PASSWORD. Corre backend/scripts/generate_secrets.py --mysql}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Falta MYSQL_ROOT_PASSWORD. Corre backend/scripts/generate_secrets.py --mysql}
+    ports:
+      - "127.0.0.1:3306:3306"   # solo accesible desde esta máquina, no desde la red
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

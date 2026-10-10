@@ -1,0 +1,7 @@
+# Finales de línea fijos por tipo de archivo, sin importar el sistema de quien clone.
+# Sin esto, git en Windows puede convertir los .sh a CRLF y Git Bash falla
+# con "$'\r': command not found".
+* text=auto
+*.sh   text eol=lf
+*.ps1  text eol=crlf
+*.py   text eol=lf

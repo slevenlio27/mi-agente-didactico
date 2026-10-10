@@ -1,0 +1,14 @@
+# Nunca dentro de la imagen: secretos, entornos locales, datos y compilados
+**/.env
+**/.env.*
+!**/.env.example
+**/.venv
+**/node_modules
+**/__pycache__
+frontend/dist
+backend/app.db
+backend/uploads
+.git
+.github
+*.zip
+*.tar.gz
