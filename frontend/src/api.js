@@ -73,4 +73,11 @@ export const api = {
   adminListUsers: () => request('/admin/users'),
   adminToggleAdmin: (id) => request(`/admin/users/${id}/toggle-admin`, { method: 'PUT' }),
   adminDeleteUser: (id) => request(`/admin/users/${id}`, { method: 'DELETE' }),
+  adminResetRequests: () => request('/admin/reset-requests'),
+  adminCreateResetLink: (id) => request(`/admin/users/${id}/reset-link`, { method: 'POST' }),
+
+  // Restablecer contraseña (sin sesión)
+  requestPasswordReset: (email) => request('/auth/password-reset/request', { method: 'POST', body: JSON.stringify({ email }) }),
+  validateResetToken: (token) => request('/auth/password-reset/validate', { method: 'POST', body: JSON.stringify({ token }) }),
+  confirmPasswordReset: (token, new_password) => request('/auth/password-reset/confirm', { method: 'POST', body: JSON.stringify({ token, new_password }) }),
 }

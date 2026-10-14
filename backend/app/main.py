@@ -9,10 +9,17 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import settings
 from .database import Base, engine
-from .routers import admin, agenda, analytics, auth, chat, files, profile, site
+from .routers import admin, agenda, analytics, auth, chat, files, password_reset, profile, site
 
 # Crea las tablas si no existen (SQLite/PostgreSQL vía SQLAlchemy)
 Base.metadata.create_all(bind=engine)
+
+# Supabase: bloquea la API REST pública sobre nuestras tablas (activa RLS sin políticas)
+from .database import lock_public_api_access  # noqa: E402
+
+_locked = lock_public_api_access()
+if _locked:
+    print(f"Seguridad a nivel de filas (RLS) activada en {_locked} tablas.")
 
 # Cifra las claves de API que versiones anteriores guardaron en texto plano.
 from .database import SessionLocal  # noqa: E402
@@ -60,7 +67,7 @@ async def security_headers(request: Request, call_next):
 
 # ── API: todo bajo /api, para no chocar con las páginas del frontend (/admin, /panel…)
 api = APIRouter(prefix="/api")
-for r in (auth, chat, files, agenda, analytics, admin, site, profile):
+for r in (auth, password_reset, chat, files, agenda, analytics, admin, site, profile):
     api.include_router(r.router)
 
 

@@ -230,6 +230,32 @@ de cada visitante. **Verificado:** 12 intentos desde 12 IPs distintas no se bloq
 - `/api/health` avisa si en producción no está configurado Supabase Storage (el disco de
   Railway es temporal y los archivos se perderían).
 
+## Sexta revisión (restablecer contraseña)
+
+- Enlace de un solo uso, válido 24 horas; generar otro anula los anteriores.
+- La base de datos guarda solo el hash SHA-256 del código: una copia de la base no
+  permite usar los enlaces.
+- El código viaja después del `#` (no llega al servidor ni a sus registros); la página
+  lo quita de la barra de direcciones al abrirse. **Verificado:** 0 apariciones en el
+  registro del servidor tras el flujo completo.
+- Solicitudes sin enumeración de cuentas (misma respuesta exista o no el correo),
+  sin duplicados y con límite de intentos; validación y confirmación también limitadas.
+- El correo se muestra oculto con un formato fijo (`p***@dominio`), que no revela su largo.
+- 18 pruebas de backend (SQLite y PostgreSQL) y 15 comprobaciones en navegador real.
+
+## Séptima revisión (aviso de Supabase: «RLS Disabled in Public»)
+
+### 18. Alto — La API REST automática de Supabase exponía las tablas
+Supabase publica una API REST (PostgREST) para las tablas del esquema `public`. Sin
+seguridad a nivel de filas (RLS), cualquiera con la clave pública del proyecto
+(«anon»/«publishable», que no se considera secreta) podía leer y modificar las tablas,
+incluida `users` (correos, hashes de contraseñas, claves de API cifradas).
+**Parche:** al arrancar, el backend activa RLS en todas las tablas de `public` **sin
+políticas**: la API pública queda bloqueada y el backend, dueño de las tablas, no se ve
+afectado. Es idempotente y cubre las tablas nuevas.
+**Verificado** con un rol `anon` como el de Supabase: antes leía `users`; después no ve
+filas y no puede insertar (`InsufficientPrivilege`). Suite completa: 50/50 en PostgreSQL.
+
 ## Lo que se revisó y no dio hallazgos
 
 - Control de acceso a conversaciones, archivos y eventos de agenda: todos

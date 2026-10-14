@@ -101,3 +101,11 @@ reactivarla.
 automáticas. Si muchos docentes suben PDF, el gigabyte de archivos se llena
 rápido: considera bajar `MAX_UPLOAD_MB` en `backend/.env` o pasar al plan de
 pago. Haz exportaciones periódicas de la base de datos desde el panel.
+
+## Seguridad: la API REST automática de Supabase
+
+Supabase publica una API REST para las tablas del esquema `public`. Esta app no la usa
+(el backend se conecta directo a la base de datos), así que el backend la **bloquea** al
+arrancar: activa la seguridad a nivel de filas (RLS) en todas las tablas, sin políticas.
+Por eso el **Security Advisor** de Supabase no debe mostrar avisos «RLS Disabled in
+Public». Si aparecen en una tabla nueva, reinicia el backend (o vuelve a desplegar).

@@ -143,6 +143,20 @@ Abre `http://localhost:5173`. Regístrate con un correo y contraseña, e inicia 
 - Manejo de errores: si falta una clave o la API tarda/falla, se devuelve un
   mensaje claro (`502` con detalle) en vez de romper la conversación.
 
+**¿Olvidaste tu contraseña?**
+- En la ventana de inicio de sesión, el docente pulsa «¿Olvidaste tu contraseña?» y
+  escribe su correo. La respuesta es siempre la misma, exista o no la cuenta (así
+  nadie puede averiguar qué correos están registrados).
+- En `/admin`, el administrador ve las solicitudes pendientes y genera un **enlace
+  de un solo uso que vence en 24 horas** (también desde el botón «Restablecer
+  contraseña» de cualquier docente). Lo copia o lo envía por correo con un clic.
+- El docente abre el enlace (`/restablecer#token=…`) y elige su contraseña nueva.
+  El código va después del `#`, así que nunca llega al servidor ni a sus registros;
+  en la base de datos solo se guarda su hash. Generar un enlace nuevo anula los
+  anteriores.
+- No necesita configurar correo. Cuando haya un dominio propio, se puede agregar
+  el envío automático del enlace por correo.
+
 **El asistente lee los archivos y conoce al docente**
 - **Adjuntos:** los PDF e imágenes que el docente adjunta en el chat se envían a
   Gemini junto con la pregunta, y los archivos de texto se envían como texto

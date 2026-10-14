@@ -235,3 +235,36 @@ class TeacherProfileIn(BaseModel):
 class TeacherProfileOut(TeacherProfileIn):
     class Config:
         from_attributes = True
+
+
+
+# ─── Restablecer contraseña ───────────────────────────────────────────
+class PasswordResetRequestIn(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetTokenIn(BaseModel):
+    token: str = Field(min_length=20, max_length=200)
+
+
+class PasswordResetConfirmIn(PasswordResetTokenIn):
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class PasswordResetValidateOut(BaseModel):
+    valid: bool
+    email_hint: Optional[str] = None
+
+
+class PasswordResetLinkOut(BaseModel):
+    token: str
+    email: EmailStr
+    expires_at: datetime.datetime
+
+
+class PasswordResetRequestOut(BaseModel):
+    id: int
+    user_id: int
+    email: EmailStr
+    full_name: Optional[str] = None
+    created_at: datetime.datetime

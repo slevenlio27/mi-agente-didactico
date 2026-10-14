@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
+import ResetLinkDialog from '../components/ResetLinkDialog'
 import { useAuth } from '../AuthContext'
 import BarChart from '../components/BarChart'
 import SiteSettingsPanel from '../components/SiteSettingsPanel'
@@ -18,8 +19,11 @@ export default function Admin() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [resetRequests, setResetRequests] = useState([])
+  const [resetLink, setResetLink] = useState(null)
 
   const load = async () => {
+    api.adminResetRequests().then(setResetRequests).catch(() => {})
     setError('')
     try {
       const [s, u] = await Promise.all([api.adminGetStats(), api.adminListUsers()])
@@ -38,6 +42,16 @@ export default function Admin() {
     try {
       await api.adminToggleAdmin(id)
       load()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  const handleResetLink = async (id) => {
+    try {
+      const r = await api.adminCreateResetLink(id)
+      setResetLink({ ...r, link: `${window.location.origin}/restablecer#token=${r.token}` })
+      api.adminResetRequests().then(setResetRequests).catch(() => {})
     } catch (err) {
       setError(err.message)
     }
@@ -120,6 +134,21 @@ export default function Admin() {
             <div className="eyebrow">Cuentas</div>
             <h2>Docentes</h2>
           </div>
+          {resetRequests.length > 0 && (
+            <div className="reset-requests" role="region" aria-label="Solicitudes para restablecer contraseña">
+              <h3>Solicitudes para restablecer contraseña <span className="badge-count">{resetRequests.length}</span></h3>
+              <p className="hint">Estos docentes olvidaron su contraseña. Genera un enlace y envíaselo.</p>
+              {resetRequests.map((r) => (
+                <div key={r.id} className="reset-request-row">
+                  <div>
+                    <strong>{r.full_name || r.email}</strong>
+                    <div className="topic-meta">{r.email} · pedida el {formatDate(r.created_at)}</div>
+                  </div>
+                  <button className="btn btn-primary btn-sm" onClick={() => handleResetLink(r.user_id)}>Generar enlace</button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="topic-list">
             {users.map((u) => (
               <div key={u.id} className="topic-row" style={{ cursor: 'default' }}>
@@ -132,6 +161,7 @@ export default function Admin() {
                 <span className="topic-date">{formatDate(u.created_at)}</span>
                 {u.id !== user.id && (
                   <>
+                    <button className="btn btn-ghost btn-sm" onClick={() => handleResetLink(u.id)}>Restablecer contraseña</button>
                     <button className="btn btn-ghost btn-sm" onClick={() => handleToggleAdmin(u.id)}>
                       {u.is_admin ? 'Quitar admin' : 'Hacer admin'}
                     </button>
@@ -145,6 +175,7 @@ export default function Admin() {
           </div>
         </div>
       </section>
+      <ResetLinkDialog data={resetLink} onClose={() => setResetLink(null)} />
     </>
   )
 }

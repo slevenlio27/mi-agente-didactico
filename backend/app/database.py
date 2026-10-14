@@ -40,3 +40,26 @@ def ping_database() -> bool:
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
     return True
+
+
+def lock_public_api_access():
+    """En PostgreSQL (Supabase): activa la seguridad a nivel de filas (RLS) en todas las
+    tablas del esquema public, sin políticas. Así la API REST automática de Supabase
+    (PostgREST, con la clave pública "anon") no puede leer ni modificar nada.
+
+    El backend no se ve afectado: se conecta como el dueño de las tablas, que no está
+    sujeto a RLS. Es idempotente: se ejecuta en cada arranque y cubre tablas nuevas."""
+    if not DATABASE_URL.startswith("postgresql"):
+        return 0
+    import logging
+    try:
+        with engine.begin() as conn:
+            tables = [r[0] for r in conn.execute(text(
+                "SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                "WHERE n.nspname = 'public' AND c.relkind = 'r' AND NOT c.relrowsecurity"))]
+            for t in tables:
+                conn.execute(text(f'ALTER TABLE public."{t}" ENABLE ROW LEVEL SECURITY'))
+        return len(tables)
+    except Exception as e:  # p. ej., el usuario no es dueño de alguna tabla
+        logging.getLogger("database").warning("No se pudo activar RLS automáticamente: %s", e)
+        return 0

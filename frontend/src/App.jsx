@@ -17,6 +17,7 @@ import { api } from './api'
 // no arrastra el código del panel docente ni del panel de administrador.
 const Landing = lazy(() => import('./pages/Landing'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const Admin = lazy(() => import('./pages/Admin'))
 const Legal = lazy(() => import('./pages/Legal'))
 
@@ -60,6 +61,7 @@ function AppShell() {
           <Route path="/panel" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           <Route path="/legal" element={<Legal />} />
+          <Route path="/restablecer" element={<ResetPassword />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

@@ -8,6 +8,7 @@ from .. import models, schemas
 from ..deps import get_current_admin, get_db
 from ..site_settings import get_site_settings
 from ..storage import storage
+from ..password_reset import create_reset_token
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -165,3 +166,27 @@ def update_settings(
     db.commit()
     db.refresh(row)
     return row
+
+
+
+@router.get("/reset-requests", response_model=list[schemas.PasswordResetRequestOut])
+def list_reset_requests(db: Session = Depends(get_db), _admin: models.User = Depends(get_current_admin)):
+    rows = (
+        db.query(models.PasswordResetRequest, models.User)
+        .join(models.User, models.User.id == models.PasswordResetRequest.user_id)
+        .filter(models.PasswordResetRequest.handled_at.is_(None))
+        .order_by(models.PasswordResetRequest.created_at.desc())
+        .all()
+    )
+    return [schemas.PasswordResetRequestOut(id=r.id, user_id=u.id, email=u.email, full_name=u.full_name, created_at=r.created_at)
+            for r, u in rows]
+
+
+@router.post("/users/{user_id}/reset-link", response_model=schemas.PasswordResetLinkOut)
+def create_reset_link(user_id: int, db: Session = Depends(get_db), admin: models.User = Depends(get_current_admin)):
+    user = db.get(models.User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    token, expires = create_reset_token(db, user, admin_id=admin.id)
+    # El enlace completo lo arma el navegador con su propia dirección (…/restablecer#token=…)
+    return schemas.PasswordResetLinkOut(token=token, email=user.email, expires_at=expires)

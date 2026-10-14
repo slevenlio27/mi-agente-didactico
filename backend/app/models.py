@@ -36,6 +36,8 @@ class User(Base):
     profile = relationship(
         "TeacherProfile", back_populates="owner", uselist=False, cascade="all, delete-orphan"
     )
+    reset_tokens = relationship("PasswordResetToken", cascade="all, delete-orphan")
+    reset_requests = relationship("PasswordResetRequest", cascade="all, delete-orphan")
 
 
 class ChatSession(Base):
@@ -176,3 +178,29 @@ class TeacherProfile(Base):
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
     owner = relationship("User", back_populates="profile")
+
+
+class PasswordResetToken(Base):
+    """Enlace de un solo uso para elegir una contraseña nueva. Solo se guarda el
+    hash del código: con una copia de la base de datos no se puede usar."""
+
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash = Column(String(64), unique=True, index=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False)
+    used_at = Column(DateTime, nullable=True)
+    created_by = Column(Integer, nullable=True)  # id del administrador que lo generó
+
+
+class PasswordResetRequest(Base):
+    """Solicitud de un docente que olvidó su contraseña; la atiende un administrador."""
+
+    __tablename__ = "password_reset_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    handled_at = Column(DateTime, nullable=True)
