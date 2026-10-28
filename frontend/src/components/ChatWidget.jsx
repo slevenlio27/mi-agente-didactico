@@ -5,6 +5,7 @@ import { useAuthModal } from '../AuthModalContext'
 import { useChatWidget } from '../ChatWidgetContext'
 import PreferencesModal, { getDefaultProvider } from './PreferencesModal'
 import KeySetupCard from './KeySetupCard'
+import PlanningForm from './PlanningForm'
 import { enabledProviders, useSiteSettings } from '../SiteSettingsContext'
 
 const PROVIDER_LABELS = { anthropic: 'Claude', openai: 'ChatGPT', gemini: 'Gemini' }
@@ -12,7 +13,7 @@ const PROVIDER_LABELS = { anthropic: 'Claude', openai: 'ChatGPT', gemini: 'Gemin
 export default function ChatWidget() {
   const { user } = useAuth()
   const { open: openAuthModal } = useAuthModal()
-  const { isOpen, openWidget, closeWidget, activeSessionId, setActiveSessionId, notifyRefresh } = useChatWidget()
+  const { isOpen, openWidget, closeWidget, activeSessionId, setActiveSessionId, notifyRefresh, planRequest, clearPlanRequest } = useChatWidget()
   const { settings } = useSiteSettings()
   const defaultProvider = () => getDefaultProvider(enabledProviders(settings))
 
@@ -25,6 +26,8 @@ export default function ChatWidget() {
   const [keyStatus, setKeyStatus] = useState(null)
   const [keyInvalid, setKeyInvalid] = useState(false)
   const [prefsOpen, setPrefsOpen] = useState(false)
+  const [analyzing, setAnalyzing] = useState('')     // nombre del archivo en análisis
+  const [scrollToPlan, setScrollToPlan] = useState(false)
   const bodyRef = useRef(null)
   const textRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -42,6 +45,9 @@ export default function ChatWidget() {
   useEffect(() => {
     if (!settings.chat_enabled) return
     if (!isOpen || !user) return
+    // Si el chat se abrió por «Planificar con IA», esa acción crea su propia conversación:
+    // aquí no se busca ni se crea otra (evita que las dos compitan).
+    if (planRequest) return
     let cancelled = false
 
     async function ensureSession() {
@@ -79,7 +85,12 @@ export default function ChatWidget() {
   }, [isOpen, user, activeSessionId, settings.chat_enabled])
 
   useEffect(() => {
+    if (scrollToPlan) {
+      const cards = bodyRef.current?.querySelectorAll('.plan-msg')
+      if (cards?.length) { cards[cards.length - 1].scrollIntoView({ block: 'start', behavior: 'smooth' }); setScrollToPlan(false); return }
+    }
     bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: 'smooth' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, sending])
 
   const startNewConversation = async () => {
@@ -116,8 +127,7 @@ export default function ChatWidget() {
     try {
       await api.sendMessage(session.id, content, files.map((f) => f.id))
       setPendingFiles([])
-      const fresh = await api.getSession(session.id)
-      setSession(fresh)
+      await refreshIfCurrent(session.id)
       notifyRefresh()
     } catch (err) {
       if (/no es válida/i.test(err.message)) setKeyInvalid(true)
@@ -132,6 +142,73 @@ export default function ChatWidget() {
     e.target.style.height = 'auto'
     e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px'
   }
+
+  // Al terminar una petición, solo se actualiza la vista si el docente sigue en esa conversación
+  // (pudo pulsar «+» o abrir otra mientras esperaba la respuesta).
+  const refreshIfCurrent = async (sessionId) => {
+    try {
+      const fresh = await api.getSession(sessionId)
+      setSession((cur) => (cur && cur.id === sessionId ? fresh : cur))
+    } catch { /* se mantiene la vista actual */ }
+  }
+
+  // «Analizar»: la IA lee el archivo y responde con un análisis y un formulario de planificación
+  const runAnalysis = async (sessionId, file) => {
+    setSending(true); setError(''); setAnalyzing(file.original_name)
+    setSession((s) => s && s.id === sessionId ? { ...s, messages: [...s.messages, { id: 'tmp', role: 'user', content: `Analizar «${file.original_name}» para planificar`, files: [file] }] } : s)
+    try {
+      await api.analyzeFile(sessionId, file.id)
+      setScrollToPlan(true)
+      notifyRefresh()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      await refreshIfCurrent(sessionId)
+      setSending(false); setAnalyzing('')
+    }
+  }
+
+  const handleAnalyze = (file) => {
+    if (!session) return
+    if (session.provider !== 'gemini') {
+      setError('El análisis de archivos funciona con Gemini. Abre una conversación nueva con Gemini (botón +).')
+      return
+    }
+    setPendingFiles((prev) => prev.filter((x) => x.id !== file.id))
+    runAnalysis(session.id, file)
+  }
+
+  const handleSubmitForm = async (formId, answers) => {
+    if (!session) return
+    const sessionId = session.id
+    setSending(true); setError('')
+    try {
+      await api.submitPlanningForm(sessionId, formId, answers)
+      notifyRefresh()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      await refreshIfCurrent(sessionId)
+      setSending(false)
+    }
+  }
+
+  // Pedido desde la galería: conversación nueva con Gemini y análisis del archivo
+  useEffect(() => {
+    if (!planRequest || !isOpen || !user) return
+    clearPlanRequest()
+    ;(async () => {
+      try {
+        const created = await api.createSession('gemini')
+        setSession({ ...created, messages: [] })
+        setActiveSessionId(created.id)
+        await runAnalysis(created.id, planRequest.file)
+      } catch (err) {
+        setError(err.message)
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planRequest, isOpen, user])
 
   const handleFilePick = async (e) => {
     const files = Array.from(e.target.files || [])
@@ -184,7 +261,11 @@ export default function ChatWidget() {
           {(!session || session.messages.length === 0) && !loadingSession && (
             <div className="msg bot">Hola, profesor/a. Sube un programa de curso, una rúbrica o una lectura, y le ayudo a analizarla y a planificar sus actividades de clase. También puede escribirme directamente.</div>
           )}
-          {session?.messages.map((m) => (
+          {session?.messages.map((m) => m.form ? (
+            <div key={m.id} className="msg bot plan-msg">
+              <PlanningForm form={m.form} onSubmit={handleSubmitForm} disabled={sending} />
+            </div>
+          ) : (
             <div key={m.id} className={`msg ${m.role === 'user' ? 'user' : 'bot'}`}>
               {m.files?.length > 0 && (
                 <div className="msg-files">
@@ -196,6 +277,9 @@ export default function ChatWidget() {
           ))}
           {sending && (
             <div className="msg typing"><span></span><span></span><span></span></div>
+          )}
+          {analyzing && (
+            <div className="analyzing-note" role="status">Analizando «{analyzing}»… La IA está leyendo el archivo; puede tardar hasta un minuto.</div>
           )}
           {showKeyCard && session && (
             <KeySetupCard provider={provider} ownKeysAllowed={settings.own_api_keys_enabled}
@@ -209,6 +293,10 @@ export default function ChatWidget() {
             {pendingFiles.map((f) => (
               <div key={f.id} className="pending-file">
                 <span>{f.original_name}</span>
+                <button className="analyze-btn" onClick={() => handleAnalyze(f)} disabled={sending}
+                  title={session?.provider === 'gemini' ? 'La IA analiza el archivo y te propone un formulario para planificar' : 'Disponible en conversaciones con Gemini'}>
+                  ✨ Analizar
+                </button>
                 <button aria-label={`Quitar ${f.original_name}`} onClick={() => setPendingFiles((prev) => prev.filter((x) => x.id !== f.id))}>✕</button>
               </div>
             ))}

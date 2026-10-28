@@ -143,6 +143,19 @@ Abre `http://localhost:5173`. Regístrate con un correo y contraseña, e inicia 
 - Manejo de errores: si falta una clave o la API tarda/falla, se devuelve un
   mensaje claro (`502` con detalle) en vez de romper la conversación.
 
+**Planificar con IA a partir de un archivo**
+- En el chat, junto a cada archivo adjunto aparece **«✨ Analizar»**; en la galería del
+  Panel docente, **«✨ Planificar con IA»** (abre una conversación nueva con Gemini).
+- Gemini lee el archivo y devuelve, con **salida estructurada** (JSON con esquema fijo),
+  el tipo de documento, un resumen, lo relevante para planificar, lo que falta y de 3 a 6
+  preguntas. La app las muestra como **formulario** (números, opciones, casillas, texto),
+  con valores sugeridos a partir del perfil docente.
+- La primera pregunta siempre es qué generar: **plan de clase por sesión** o **secuencia
+  didáctica de la unidad**. Al enviar, la IA genera la planificación con el archivo, las
+  respuestas y el perfil; el docente puede seguir ajustándola en la conversación.
+- Solo se analiza cuando el docente lo pide (consume cuota de su clave de Gemini). El
+  backend valida todo lo que devuelve la IA y las respuestas del formulario.
+
 **¿Olvidaste tu contraseña?**
 - En la ventana de inicio de sesión, el docente pulsa «¿Olvidaste tu contraseña?» y
   escribe su correo. La respuesta es siempre la misma, exista o no la cuenta (así

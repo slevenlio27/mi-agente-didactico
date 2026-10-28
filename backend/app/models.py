@@ -82,6 +82,7 @@ class ChatMessage(Base):
 
     session = relationship("ChatSession", back_populates="messages")
     files = relationship("UploadedFile", secondary=message_files, lazy="selectin")
+    form = relationship("MessageForm", uselist=False, lazy="selectin", cascade="all, delete-orphan")
 
 
 class UploadedFile(Base):
@@ -204,3 +205,44 @@ class PasswordResetRequest(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     handled_at = Column(DateTime, nullable=True)
+
+
+class MessageForm(Base):
+    """Análisis de un archivo + formulario de planificación, ligado al mensaje de la IA."""
+
+    __tablename__ = "message_forms"
+
+    id = Column(Integer, primary_key=True, index=True)
+    message_id = Column(Integer, ForeignKey("chat_messages.id", ondelete="CASCADE"), unique=True, nullable=False)
+    file_name = Column(String(255), nullable=True)
+    payload = Column(Text, nullable=False)          # análisis validado (JSON)
+    answers = Column(Text, nullable=True)           # respuestas del docente (JSON)
+    submitted_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    # Propiedades que lee el esquema de la API (FormOut)
+    @property
+    def data(self):
+        import json
+        return json.loads(self.payload)
+
+    @property
+    def tipo_documento(self): return self.data["tipo_documento"]
+    @property
+    def titulo(self): return self.data["titulo"]
+    @property
+    def resumen(self): return self.data["resumen"]
+    @property
+    def hallazgos(self): return self.data["hallazgos"]
+    @property
+    def faltantes(self): return self.data["faltantes"]
+    @property
+    def preguntas(self): return self.data["preguntas"]
+
+    @property
+    def respuestas(self):
+        import json
+        return json.loads(self.answers) if self.answers else None
+
+    @property
+    def enviado(self): return self.submitted_at is not None

@@ -78,7 +78,7 @@ def call_openai(messages, model="gpt-4o-mini", api_key=None, system=None):
         raise AIProviderError(f"Error al conectar con OpenAI: {e}")
 
 
-def call_gemini(messages, model=None, api_key=None, system=None):
+def call_gemini(messages, model=None, api_key=None, system=None, json_schema=None):
     model = model or settings.GEMINI_MODEL
     key = api_key or settings.GEMINI_API_KEY
     if not key:
@@ -112,6 +112,9 @@ def call_gemini(messages, model=None, api_key=None, system=None):
     body = {"contents": contents}
     if system:
         body["system_instruction"] = {"parts": [{"text": system}]}
+    if json_schema:
+        # Salida estructurada: Gemini garantiza un JSON que cumple el esquema
+        body["generationConfig"] = {"responseMimeType": "application/json", "responseJsonSchema": json_schema}
 
     try:
         resp = requests.post(
@@ -275,8 +278,13 @@ DEFAULT_MODELS = {
 }
 
 
-def get_ai_response(provider: str, messages, model: str = None, api_key: str = None, system: str = None) -> str:
+def get_ai_response(provider: str, messages, model: str = None, api_key: str = None, system: str = None,
+                    json_schema: dict = None) -> str:
     if provider not in PROVIDERS:
         raise AIProviderError(f"Proveedor de IA desconocido: {provider}")
     fn = PROVIDERS[provider]
+    if json_schema is not None:
+        if provider != "gemini":
+            raise AIProviderError("El análisis de archivos funciona con Gemini.")
+        return fn(messages, model or DEFAULT_MODELS[provider], api_key=api_key, system=system, json_schema=json_schema)
     return fn(messages, model or DEFAULT_MODELS[provider], api_key=api_key, system=system)

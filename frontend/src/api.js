@@ -40,6 +40,10 @@ export const api = {
     request('/chat/sessions', { method: 'POST', body: JSON.stringify({ provider, model }) }),
   getSession: (id) => request(`/chat/sessions/${id}`),
   deleteSession: (id) => request(`/chat/sessions/${id}`, { method: 'DELETE' }),
+  analyzeFile: (sessionId, fileId) =>
+    request(`/chat/sessions/${sessionId}/analyze`, { method: 'POST', body: JSON.stringify({ file_id: fileId }) }),
+  submitPlanningForm: (sessionId, formId, answers) =>
+    request(`/chat/sessions/${sessionId}/forms/${formId}/submit`, { method: 'POST', body: JSON.stringify({ answers }) }),
   sendMessage: (id, content, fileIds = []) =>
     request(`/chat/sessions/${id}/messages`, { method: 'POST', body: JSON.stringify({ content, file_ids: fileIds }) }),
 

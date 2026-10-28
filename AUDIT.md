@@ -256,6 +256,23 @@ afectado. Es idempotente y cubre las tablas nuevas.
 **Verificado** con un rol `anon` como el de Supabase: antes leía `users`; después no ve
 filas y no puede insertar (`InsufficientPrivilege`). Suite completa: 50/50 en PostgreSQL.
 
+## Octava revisión («Planificar con IA»)
+
+- **La respuesta de la IA no se usa a ciegas:** aunque Gemini cumple el esquema JSON, el
+  backend normaliza tipos, recorta textos, limita a 6 preguntas y 8 hallazgos, convierte
+  campos de opción sin alternativas reales en texto y agrega la pregunta fija de salida.
+  Un JSON inválido devuelve un error claro y no deja mensajes a medias.
+- **Respuestas del formulario validadas** contra las preguntas guardadas: opciones
+  inventadas, números fuera de rango o claves desconocidas se rechazan o se descartan.
+- Solo se pueden analizar archivos propios y enviar formularios de conversaciones propias;
+  un formulario no se puede enviar dos veces. Si la IA falla al generar, el formulario vuelve
+  a quedar disponible sin duplicar mensajes. Límite de análisis por IP.
+- **Error encontrado y corregido en el frontend:** si el docente cambiaba de conversación
+  mientras la IA respondía, al terminar la vista volvía a la conversación anterior. Ahora solo
+  se actualiza la conversación que sigue abierta (también en el envío normal de mensajes).
+- La tabla nueva (`message_forms`) queda con RLS automáticamente en Supabase.
+- 31 pruebas de backend (SQLite y PostgreSQL) y 13 comprobaciones en navegador real.
+
 ## Lo que se revisó y no dio hallazgos
 
 - Control de acceso a conversaciones, archivos y eventos de agenda: todos

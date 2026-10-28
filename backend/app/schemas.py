@@ -73,12 +73,43 @@ class AttachmentOut(BaseModel):
         from_attributes = True
 
 
+class FormQuestionOut(BaseModel):
+    id: str
+    pregunta: str
+    tipo: str
+    opciones: List[str] = []
+    sugerencia: str = ""
+    requerida: bool = False
+
+
+class FormFindingOut(BaseModel):
+    etiqueta: str
+    detalle: str
+
+
+class FormOut(BaseModel):
+    id: int
+    file_name: Optional[str] = None
+    tipo_documento: str
+    titulo: str
+    resumen: str
+    hallazgos: List[FormFindingOut] = []
+    faltantes: List[str] = []
+    preguntas: List[FormQuestionOut] = []
+    respuestas: Optional[dict] = None
+    enviado: bool = False
+
+    class Config:
+        from_attributes = True
+
+
 class ChatMessageOut(BaseModel):
     id: int
     role: str
     content: str
     created_at: datetime.datetime
     files: List[AttachmentOut] = []
+    form: Optional[FormOut] = None
 
     class Config:
         from_attributes = True
@@ -268,3 +299,12 @@ class PasswordResetRequestOut(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     created_at: datetime.datetime
+
+
+
+class AnalyzeFileIn(BaseModel):
+    file_id: int
+
+
+class FormSubmitIn(BaseModel):
+    answers: dict = Field(default_factory=dict)

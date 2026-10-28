@@ -520,3 +520,34 @@ section.alt-section{background:var(--fg-soft); border-top:1px solid var(--border
 .badge-count{background:var(--accent); color:#fff; border-radius:999px; font-size:0.75rem; padding:2px 9px;}
 .reset-request-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-top:1px solid var(--border);}
 .reset-card h2{font-size:clamp(1.5rem, 3.2vw, 1.9rem); line-height:1.2;}
+
+/* ─── Planificar con IA: análisis + formulario dentro del chat ───── */
+.analyze-btn{background:var(--accent); color:#fff; border:none; border-radius:7px; padding:3px 9px; font-size:0.72rem; font-weight:600; cursor:pointer; margin-left:4px;}
+.analyze-btn:disabled{opacity:.55; cursor:default;}
+.msg.plan-msg{max-width:100%; width:100%; padding:0; background:transparent; border:none;}
+.plan-card{background:var(--surface); border:1px solid var(--accent); border-radius:14px; padding:14px 15px; display:flex; flex-direction:column; gap:10px; box-shadow:0 0 0 4px var(--accent-soft);}
+.plan-head{display:flex; flex-direction:column; gap:5px;}
+.plan-head strong{font-family:var(--font-display); font-size:0.98rem; color:var(--fg); line-height:1.3;}
+.plan-badge{align-self:flex-start; background:var(--accent-soft); color:var(--accent); font-family:var(--font-mono); font-size:0.66rem; text-transform:uppercase; letter-spacing:.06em; padding:3px 8px; border-radius:6px; font-weight:700;}
+.plan-summary{font-size:0.84rem; color:var(--muted); line-height:1.5;}
+.plan-details summary{cursor:pointer; font-size:0.82rem; font-weight:700; color:var(--fg);}
+.plan-details ul, .plan-missing ul, .plan-sent ul{margin:6px 0 0; padding-left:18px; font-size:0.8rem; color:var(--fg); display:flex; flex-direction:column; gap:3px; line-height:1.45;}
+.plan-missing{background:color-mix(in oklch, orange 12%, transparent); border-radius:9px; padding:9px 11px; font-size:0.8rem;}
+.plan-form{display:flex; flex-direction:column; gap:10px; border-top:1px solid var(--border); padding-top:10px;}
+.plan-form-title{font-size:0.82rem; font-weight:700; color:var(--accent);}
+.plan-field{border:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px;}
+.plan-field legend{font-size:0.82rem; color:var(--fg); font-weight:600; margin-bottom:5px; line-height:1.35;}
+.plan-field input[type=number], .plan-field textarea{width:100%; padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--fg); font-size:0.85rem; font-family:inherit;}
+.plan-options{display:flex; flex-wrap:wrap; gap:6px;}
+.plan-chip{display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border-radius:999px; border:1px solid var(--border); background:var(--bg); font-size:0.78rem; cursor:pointer; color:var(--fg);}
+.plan-chip input{accent-color:var(--accent); margin:0;}
+.plan-chip.on{border-color:var(--accent); background:var(--accent-soft); color:var(--fg); font-weight:600;}
+.plan-submit{width:100%; justify-content:center;}
+.plan-sent{background:var(--accent-soft); border-radius:9px; padding:9px 11px; font-size:0.82rem; color:var(--fg);}
+.plan-sent em{font-style:normal; font-weight:700;}
+.plan-link{background:none; border:none; padding:0; cursor:pointer; color:var(--accent); font-weight:700; font-size:inherit;}
+
+.analyzing-note{align-self:flex-start; font-size:0.78rem; color:var(--muted); background:var(--accent-soft); border-radius:9px; padding:7px 10px; max-width:90%;}
+/* Galería: «Planificar con IA» en su propia fila, con el color de acento (no el rojo de «Eliminar») */
+.file-card .file-actions{flex-wrap:wrap; row-gap:6px;}
+.file-card .file-actions .plan-link{flex-basis:100%; text-align:left; color:var(--accent); font-weight:700; font-size:0.78rem;}

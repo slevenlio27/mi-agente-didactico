@@ -33,7 +33,7 @@ function weekDates() {
 
 export default function Dashboard() {
   const { user } = useAuth()
-  const { openWidget, refreshSignal } = useChatWidget()
+  const { openWidget, refreshSignal, requestPlanning } = useChatWidget()
   const { settings } = useSiteSettings()
 
   const [sessions, setSessions] = useState([])
@@ -279,6 +279,9 @@ export default function Dashboard() {
                 <p className="file-name" title={f.original_name}>{f.original_name}</p>
                 <p className="file-meta">{(f.size_bytes / 1024).toFixed(0)} KB</p>
                 <div className="file-actions">
+                  {settings.chat_enabled && settings.provider_gemini_enabled && (
+                    <button className="plan-link" onClick={() => requestPlanning(f)}>✨ Planificar con IA</button>
+                  )}
                   <a href={api.fileDownloadUrl(f.id)} target="_blank" rel="noreferrer">Ver / descargar</a>
                   <button onClick={() => handleDeleteFile(f.id)}>Eliminar</button>
                 </div>
