@@ -58,6 +58,7 @@ def confirm(
     user = db.get(models.User, row.user_id)
     user.hashed_password = security.hash_password(payload.new_password)
     now = datetime.datetime.utcnow()
+    user.password_changed_at = now          # cierra todas las sesiones abiertas
     # Este enlace y cualquier otro pendiente quedan inutilizados
     for t in db.query(models.PasswordResetToken).filter(
         models.PasswordResetToken.user_id == user.id, models.PasswordResetToken.used_at.is_(None)

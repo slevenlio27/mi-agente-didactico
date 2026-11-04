@@ -15,7 +15,8 @@ import { api } from './api'
 // Code-splitting: cada página se descarga solo cuando se visita, así la
 // carga inicial (la landing, que es lo primero que ve casi todo el mundo)
 // no arrastra el código del panel docente ni del panel de administrador.
-const Landing = lazy(() => import('./pages/Landing'))
+// La portada es la página más visitada: se incluye desde el inicio (sin una segunda descarga)
+import Landing from './pages/Landing'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const Admin = lazy(() => import('./pages/Admin'))
@@ -55,6 +56,7 @@ function AppShell() {
       <SiteNav onOpenDrawer={() => setDrawerOpen(true)} />
       <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
+      <main id="contenido">
       <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<Landing />} />
@@ -65,6 +67,7 @@ function AppShell() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      </main>
 
       <AuthModal />
       <ChatWidget />

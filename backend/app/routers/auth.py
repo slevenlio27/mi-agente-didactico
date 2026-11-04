@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Response
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
 from sqlalchemy.orm import Session
@@ -164,6 +165,18 @@ def google_auth(
 @router.get("/me", response_model=schemas.UserOut)
 def me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+
+@router.get("/session", response_model=Optional[schemas.UserOut])
+def session_status(request: Request, db: Session = Depends(get_db)):
+    """Estado de la sesión al cargar la página: devuelve el usuario o null, sin error 401.
+    (Un visitante sin sesión es lo normal en la portada; no debe aparecer como error.)"""
+    if not request.cookies.get("access_token"):
+        return None
+    try:
+        return get_current_user(request, db)
+    except HTTPException:
+        return None
 
 
 def _keys_status(user: models.User) -> schemas.ApiKeysStatus:

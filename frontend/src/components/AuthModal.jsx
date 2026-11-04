@@ -156,18 +156,18 @@ export default function AuthModal() {
 
           {mode === 'forgot' && !forgotDone && (
             <p className="hint" style={{ marginTop: 14, textAlign: 'center' }}>
-              <button type="button" className="link-btn" style={{ color: 'var(--accent)', textDecoration: 'underline' }} onClick={() => { setMode('login'); reset() }}>Volver a iniciar sesión</button>
+              <button type="button" className="link-btn" style={{ color: 'var(--accent-ink)', textDecoration: 'underline' }} onClick={() => { setMode('login'); reset() }}>Volver a iniciar sesión</button>
             </p>
           )}
           {mode !== 'forgot' && settings.registration_enabled && (
           <p className="hint" style={{ marginTop: 14, textAlign: 'center' }}>
             {mode === 'login' ? (
               <>¿No tienes cuenta?{' '}
-                <button type="button" className="link-btn" style={{ color: 'var(--accent)', textDecoration: 'underline' }} onClick={() => { setMode('register'); reset() }}>Regístrate</button>
+                <button type="button" className="link-btn" style={{ color: 'var(--accent-ink)', textDecoration: 'underline' }} onClick={() => { setMode('register'); reset() }}>Regístrate</button>
               </>
             ) : (
               <>¿Ya tienes cuenta?{' '}
-                <button type="button" className="link-btn" style={{ color: 'var(--accent)', textDecoration: 'underline' }} onClick={() => { setMode('login'); reset() }}>Inicia sesión</button>
+                <button type="button" className="link-btn" style={{ color: 'var(--accent-ink)', textDecoration: 'underline' }} onClick={() => { setMode('login'); reset() }}>Inicia sesión</button>
               </>
             )}
           </p>

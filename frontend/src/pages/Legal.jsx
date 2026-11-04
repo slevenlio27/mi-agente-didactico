@@ -17,7 +17,7 @@ export default function Legal() {
           Última actualización: {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
 
-        <nav className="legal-toc">
+        <nav className="legal-toc" aria-label="Índice">
           <a href="#privacidad">Política de privacidad</a>
           <a href="#terminos">Términos y condiciones</a>
           <a href="#cookies">Política de cookies</a>

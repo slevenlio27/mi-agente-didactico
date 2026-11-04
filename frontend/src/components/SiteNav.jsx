@@ -32,7 +32,7 @@ export default function SiteNav({ onOpenDrawer }) {
           <Link to="/" className="brand">
             <span className="stamp-mark"><span>IA</span></span>{settings.site_name}
           </Link>
-          <nav className="links">
+          <nav className="links" aria-label="Secciones">
             <a href="/#beneficios">Beneficios</a>
             <a href="/#que-hace">Qué puede hacer</a>
             <a href="/#como-funciona">Cómo funciona</a>
@@ -40,7 +40,7 @@ export default function SiteNav({ onOpenDrawer }) {
             {user?.is_admin && <Link to="/admin">Administración</Link>}
           </nav>
           <div className="nav-actions">
-            <button className="mode-toggle" aria-pressed={dark} onClick={toggleDark}>
+            <button className="mode-toggle" aria-pressed={dark} onClick={toggleDark} aria-label={dark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}>
               <span>{dark ? SUN : MOON}</span>
               <span id="mode-label">{dark ? 'Modo claro' : 'Modo oscuro'}</span>
             </button>

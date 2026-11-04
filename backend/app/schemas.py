@@ -110,6 +110,8 @@ class ChatMessageOut(BaseModel):
     created_at: datetime.datetime
     files: List[AttachmentOut] = []
     form: Optional[FormOut] = None
+    # Planificación generada desde el formulario: se puede descargar en Word
+    es_plan: bool = False
 
     class Config:
         from_attributes = True

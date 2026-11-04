@@ -13,6 +13,10 @@ from ..config import settings
 from ..storage import StorageError, storage
 from ..rate_limit import rate_limit
 from .. import planning
+from ..plan_docx import build_plan_docx, fecha_hoy
+from fastapi.responses import Response
+from urllib.parse import quote
+import re as _re
 import datetime
 import json
 
@@ -92,7 +96,9 @@ def _get_owned_session(session_id: int, db: Session, user: models.User) -> model
 def get_session(
     session_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)
 ):
-    return _get_owned_session(session_id, db, user)
+    session = _get_owned_session(session_id, db, user)
+    _mark_plans(session.messages)
+    return session
 
 
 @router.delete("/sessions/{session_id}")
@@ -275,7 +281,9 @@ def submit_planning_form(
     db.add(summary)
     db.commit()
     try:
-        return _generate_reply(db, session, user, site, extra_system=planning.generation_instructions(answers))
+        reply = _generate_reply(db, session, user, site, extra_system=planning.generation_instructions(answers))
+        reply.es_plan = True
+        return reply
     except HTTPException:
         # Si la IA falla, el formulario vuelve a quedar disponible y se quita el mensaje de respuestas,
         # para que al reintentar no quede duplicado
@@ -284,3 +292,60 @@ def submit_planning_form(
         db.delete(summary)
         db.commit()
         raise
+
+
+PLAN_PREFIX = "Respuestas del formulario:"
+
+
+def _mark_plans(messages):
+    """Marca como planificación la respuesta de la IA que sigue a las respuestas de un formulario."""
+    prev = None
+    for m in messages:
+        m.es_plan = bool(m.role == "assistant" and prev is not None and prev.role == "user"
+                         and prev.content.startswith(PLAN_PREFIX))
+        prev = m
+
+
+@router.get("/sessions/{session_id}/messages/{message_id}/docx")
+def download_plan_docx(
+    session_id: int, message_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)
+):
+    """Descarga una respuesta de la IA (normalmente la planificación) como Word editable."""
+    session = _get_owned_session(session_id, db, user)
+    msgs = list(session.messages)
+    idx = next((i for i, m in enumerate(msgs) if m.id == message_id), None)
+    if idx is None or msgs[idx].role != "assistant":
+        raise HTTPException(status_code=404, detail="Respuesta no encontrada.")
+    msg = msgs[idx]
+
+    # El formulario más reciente antes de esta respuesta aporta el contexto de la planificación
+    form = next((m.form for m in reversed(msgs[:idx]) if m.form is not None and m.form.enviado), None)
+    profile = db.query(models.TeacherProfile).filter(models.TeacherProfile.user_id == user.id).first()
+    respuestas = (form.respuestas or {}) if form else {}
+    salida = respuestas.get("salida") or "Planificación"
+    datos = [("Docente", user.full_name or user.email)]
+    if profile and profile.materia:
+        datos.append(("Materia", profile.materia))
+    if profile and profile.nivel:
+        datos.append(("Nivel", profile.nivel))
+    if form:
+        datos.append(("Documento base", form.file_name or form.titulo))
+        for q in form.preguntas:
+            if q["id"] != "salida" and q["id"] in respuestas:
+                v = respuestas[q["id"]]
+                datos.append((q["pregunta"], ", ".join(v) if isinstance(v, list) else v))
+    datos.append(("Fecha", fecha_hoy()))
+
+    contenido = build_plan_docx(
+        msg.content, titulo_doc=salida,
+        subtitulo=(form.titulo if form else session.title) or "", datos=datos,
+    )
+    base = _re.sub(r"[^\w\-]+", "_", f"{salida} {form.titulo if form else session.title}", flags=_re.UNICODE).strip("_")[:80] or "planificacion"
+    nombre = f"{base}.docx"
+    ascii_nombre = nombre.encode("ascii", "ignore").decode() or "planificacion.docx"
+    return Response(
+        content=contenido,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename=\"{ascii_nombre}\"; filename*=UTF-8''{quote(nombre)}",
+                 "Cache-Control": "no-store"},
+    )

@@ -249,7 +249,6 @@ export default function Dashboard() {
             className={`dropzone ${dragOver ? 'drag' : ''}`}
             tabIndex={0}
             role="button"
-            aria-label="Subir archivos"
             onClick={() => document.getElementById('dash-file-input').click()}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
             onDragLeave={() => setDragOver(false)}

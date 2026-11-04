@@ -167,7 +167,7 @@ export default function Landing() {
       <footer className="site-footer">
         <div className="wrap">
           <span>Mi Agente Didáctico — apoyo con IA exclusivo para docentes universitarios</span>
-          <nav className="footer-legal-links">
+          <nav className="footer-legal-links" aria-label="Información legal">
             <Link to="/legal#privacidad">Privacidad</Link>
             <Link to="/legal#terminos">Términos</Link>
             <Link to="/legal#cookies">Cookies</Link>

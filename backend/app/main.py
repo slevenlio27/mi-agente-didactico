@@ -14,6 +14,11 @@ from .routers import admin, agenda, analytics, auth, chat, files, password_reset
 # Crea las tablas si no existen (SQLite/PostgreSQL vía SQLAlchemy)
 Base.metadata.create_all(bind=engine)
 
+# Columnas e índices nuevos en tablas que ya existían (idempotente)
+from .database import upgrade_schema  # noqa: E402
+
+upgrade_schema()
+
 # Supabase: bloquea la API REST pública sobre nuestras tablas (activa RLS sin políticas)
 from .database import lock_public_api_access  # noqa: E402
 
@@ -53,6 +58,23 @@ app.add_middleware(
 )
 
 
+# Política de seguridad de contenido: el navegador solo ejecuta scripts del propio sitio y del
+# inicio de sesión de Google (orígenes que Google documenta para «Sign in with Google»).
+CSP = "; ".join([
+    "default-src 'self'",
+    "script-src 'self' https://accounts.google.com/gsi/client",
+    "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
+    "frame-src https://accounts.google.com/gsi/",
+    "connect-src 'self' https://accounts.google.com/gsi/",
+    "img-src 'self' data: blob: https://*.googleusercontent.com",
+    "font-src 'self' data:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+])
+
+
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -60,6 +82,7 @@ async def security_headers(request: Request, call_next):
     response.headers.setdefault("X-Frame-Options", "DENY")  # nadie puede incrustar la app en otro sitio
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+    response.headers.setdefault("Content-Security-Policy", CSP)
     if settings.COOKIE_SECURE:  # solo con HTTPS
         response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
     return response
@@ -96,7 +119,14 @@ DIST = Path(os.getenv("FRONTEND_DIST", Path(__file__).resolve().parents[2] / "fr
 if (DIST / "index.html").is_file():
     if (DIST / "assets").is_dir():
         # Archivos con huella en el nombre (index-a1b2c3.js): se pueden guardar en caché mucho tiempo
-        app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="assets")
+        class ImmutableStatic(StaticFiles):
+            async def get_response(self, path, scope):
+                resp = await super().get_response(path, scope)
+                if resp.status_code == 200:
+                    resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+                return resp
+
+        app.mount("/assets", ImmutableStatic(directory=DIST / "assets"), name="assets")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     def frontend(full_path: str):
@@ -106,6 +136,9 @@ if (DIST / "index.html").is_file():
         # Archivos reales de la raíz (favicon, robots.txt…), sin poder salir de la carpeta
         if full_path and candidate.is_file() and DIST in candidate.parents:
             return FileResponse(candidate)
+        # Un archivo que no existe (/sitemap.xml, /favicon.ico…) es un 404 real, no la portada
+        if "." in full_path.rsplit("/", 1)[-1]:
+            raise HTTPException(status_code=404, detail="Archivo no encontrado.")
         # Cualquier otra ruta (/panel, /admin, /legal…) la resuelve React
         return FileResponse(DIST / "index.html", headers={"Cache-Control": "no-cache"})
 else:

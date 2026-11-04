@@ -1,0 +1,7 @@
+# Mi Agente Didáctico
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /panel
+Disallow: /admin
+Disallow: /restablecer

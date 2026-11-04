@@ -1,3 +1,4 @@
+import time
 import datetime
 
 import bcrypt
@@ -31,7 +32,8 @@ def create_access_token(data: dict) -> str:
     expire = datetime.datetime.utcnow() + datetime.timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    to_encode.update({"exp": expire})
+    # «iat» (emitido en): permite invalidar las sesiones anteriores a un cambio de contraseña
+    to_encode.update({"exp": expire, "iat": int(time.time())})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 

@@ -27,6 +27,7 @@ export default function ChatWidget() {
   const [keyInvalid, setKeyInvalid] = useState(false)
   const [prefsOpen, setPrefsOpen] = useState(false)
   const [analyzing, setAnalyzing] = useState('')     // nombre del archivo en análisis
+  const [downloading, setDownloading] = useState(null)  // id del mensaje que se está descargando
   const [scrollToPlan, setScrollToPlan] = useState(false)
   const bodyRef = useRef(null)
   const textRef = useRef(null)
@@ -178,6 +179,14 @@ export default function ChatWidget() {
     runAnalysis(session.id, file)
   }
 
+  const handleDownloadDocx = async (messageId) => {
+    if (!session) return
+    setDownloading(messageId); setError('')
+    try { await api.downloadPlanDocx(session.id, messageId) }
+    catch (err) { setError(err.message) }
+    finally { setDownloading(null) }
+  }
+
   const handleSubmitForm = async (formId, answers) => {
     if (!session) return
     const sessionId = session.id
@@ -273,6 +282,11 @@ export default function ChatWidget() {
                 </div>
               )}
               {m.content}
+              {m.es_plan && (
+                <button className="docx-btn" onClick={() => handleDownloadDocx(m.id)} disabled={downloading === m.id}>
+                  {downloading === m.id ? 'Generando documento…' : '📄 Descargar en Word'}
+                </button>
+              )}
             </div>
           ))}
           {sending && (

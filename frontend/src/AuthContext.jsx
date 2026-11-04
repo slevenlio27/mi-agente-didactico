@@ -8,8 +8,9 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Estado de la sesión: usuario o null (sin error 401 para quien no ha iniciado sesión)
     api
-      .me()
+      .session()
       .then(setUser)
       .catch(() => setUser(null))
       .finally(() => setLoading(false))

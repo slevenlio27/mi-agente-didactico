@@ -13,6 +13,8 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     # Nula para cuentas creadas solo con "Iniciar sesión con Google"
     hashed_password = Column(String(255), nullable=True)
+    # Al cambiar la contraseña, las sesiones emitidas antes dejan de valer
+    password_changed_at = Column(DateTime, nullable=True)
     google_sub = Column(String(255), unique=True, index=True, nullable=True)
     full_name = Column(String(255), nullable=True)
     is_admin = Column(Boolean, default=False, nullable=False)
@@ -44,7 +46,7 @@ class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     title = Column(String(255), default="Nueva conversación")
     provider = Column(String(50), default="openai")  # openai | gemini | anthropic
     model = Column(String(100), nullable=True)
@@ -67,7 +69,7 @@ message_files = Table(
     "message_files",
     Base.metadata,
     Column("message_id", Integer, ForeignKey("chat_messages.id", ondelete="CASCADE"), primary_key=True),
-    Column("file_id", Integer, ForeignKey("uploaded_files.id", ondelete="CASCADE"), primary_key=True),
+    Column("file_id", Integer, ForeignKey("uploaded_files.id", ondelete="CASCADE"), primary_key=True, index=True),
 )
 
 
@@ -75,7 +77,7 @@ class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, index=True)
-    session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=False)
+    session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=False, index=True)
     role = Column(String(20), nullable=False)  # user | assistant
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
@@ -89,8 +91,8 @@ class UploadedFile(Base):
     __tablename__ = "uploaded_files"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    session_id = Column(Integer, ForeignKey("chat_sessions.id", ondelete="SET NULL"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    session_id = Column(Integer, ForeignKey("chat_sessions.id", ondelete="SET NULL"), nullable=True, index=True)
     original_name = Column(String(255), nullable=False)
     stored_name = Column(String(255), nullable=False)
     content_type = Column(String(100), nullable=False)
@@ -104,7 +106,7 @@ class ClassEvent(Base):
     __tablename__ = "class_events"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     # 0 = lunes ... 6 = domingo
     day_of_week = Column(Integer, nullable=False)
     title = Column(String(120), nullable=False)
@@ -123,7 +125,7 @@ class PageView(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     path = Column(String(255), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
 
 

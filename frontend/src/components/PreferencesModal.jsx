@@ -92,7 +92,7 @@ export default function PreferencesModal({ open, onClose }) {
           </p>
 
           {error && <p className="error">{error}</p>}
-          {savedMsg && <p className="hint" style={{ color: 'var(--accent)' }}>{savedMsg}</p>}
+          {savedMsg && <p className="hint" style={{ color: 'var(--accent-ink)' }}>{savedMsg}</p>}
 
           <div className="provider-options">
             {visibleProviders.map((p) => (
@@ -110,7 +110,7 @@ export default function PreferencesModal({ open, onClose }) {
                   {!ownKeys && keyStatus[p.statusField] && (
                     <div className="pc-desc" style={{ marginTop: 8 }}>
                       Tienes una clave guardada que ya no se usa (el administrador desactivó las claves propias).{' '}
-                      <button type="button" className="link-btn" style={{ color: 'var(--accent)', textDecoration: 'underline' }}
+                      <button type="button" className="link-btn" style={{ color: 'var(--accent-ink)', textDecoration: 'underline' }}
                         onClick={(e) => { e.stopPropagation(); handleClearKey(p.field) }}>
                         {keyInputs[p.field] === '' ? 'Se quitará al guardar' : 'Quitarla'}
                       </button>

@@ -34,12 +34,29 @@ export const api = {
   googleAuth: (credential) => request('/auth/google', { method: 'POST', body: JSON.stringify({ credential }) }),
   logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),
+  session: () => request('/auth/session'),
 
   listSessions: (q = '') => request(`/chat/sessions${q ? `?q=${encodeURIComponent(q)}` : ''}`),
   createSession: (provider, model) =>
     request('/chat/sessions', { method: 'POST', body: JSON.stringify({ provider, model }) }),
   getSession: (id) => request(`/chat/sessions/${id}`),
   deleteSession: (id) => request(`/chat/sessions/${id}`, { method: 'DELETE' }),
+  // Descarga la planificación como Word editable (con la sesión del docente)
+  downloadPlanDocx: async (sessionId, messageId) => {
+    const res = await fetch(`${API_URL}/chat/sessions/${sessionId}/messages/${messageId}/docx`, { credentials: 'include' })
+    if (!res.ok) {
+      let detail = 'No se pudo generar el documento.'
+      try { detail = (await res.json()).detail || detail } catch { /* respuesta sin JSON */ }
+      throw new Error(detail)
+    }
+    const cd = res.headers.get('Content-Disposition') || ''
+    const m = cd.match(/filename\*=UTF-8''([^;]+)/) || cd.match(/filename="([^"]+)"/)
+    const nombre = m ? decodeURIComponent(m[1]) : 'planificacion.docx'
+    const url = URL.createObjectURL(await res.blob())
+    const a = document.createElement('a'); a.href = url; a.download = nombre
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 2000)
+  },
   analyzeFile: (sessionId, fileId) =>
     request(`/chat/sessions/${sessionId}/analyze`, { method: 'POST', body: JSON.stringify({ file_id: fileId }) }),
   submitPlanningForm: (sessionId, formId, answers) =>

@@ -63,3 +63,32 @@ def lock_public_api_access():
     except Exception as e:  # p. ej., el usuario no es dueño de alguna tabla
         logging.getLogger("database").warning("No se pudo activar RLS automáticamente: %s", e)
         return 0
+
+
+# Índices que faltaban en las claves foráneas (el «Performance Advisor» de Supabase los señaló)
+FK_INDEXES = [
+    ("ix_chat_messages_session_id", "chat_messages", "session_id"),
+    ("ix_chat_sessions_user_id", "chat_sessions", "user_id"),
+    ("ix_class_events_user_id", "class_events", "user_id"),
+    ("ix_message_files_file_id", "message_files", "file_id"),
+    ("ix_page_views_user_id", "page_views", "user_id"),
+    ("ix_uploaded_files_session_id", "uploaded_files", "session_id"),
+    ("ix_uploaded_files_user_id", "uploaded_files", "user_id"),
+]
+
+
+def upgrade_schema():
+    """Cambios de esquema seguros e idempotentes sobre bases existentes (create_all solo crea
+    tablas nuevas, no columnas ni índices en tablas que ya existen)."""
+    from sqlalchemy import inspect
+
+    insp = inspect(engine)
+    with engine.begin() as conn:
+        if "users" in insp.get_table_names():
+            cols = {c["name"] for c in insp.get_columns("users")}
+            if "password_changed_at" not in cols:
+                tipo = "TIMESTAMP" if not IS_SQLITE else "DATETIME"
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN password_changed_at {tipo}"))
+        for name, table, col in FK_INDEXES:
+            if table in insp.get_table_names():
+                conn.execute(text(f'CREATE INDEX IF NOT EXISTS {name} ON "{table}" ({col})'))

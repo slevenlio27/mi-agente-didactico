@@ -24,7 +24,7 @@ export default function CookieBanner() {
   if (!visible || !settings.cookie_banner_enabled) return null
 
   return (
-    <div className="cookie-banner">
+    <div className="cookie-banner" role="region" aria-label="Aviso de cookies">
       <p>
         Usamos una cookie estrictamente necesaria para mantener tu sesión iniciada, y guardamos tus
         preferencias (tema, materia, IA por defecto) en tu navegador.{' '}

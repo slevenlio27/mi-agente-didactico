@@ -273,6 +273,35 @@ filas y no puede insertar (`InsufficientPrivilege`). Suite completa: 50/50 en Po
 - La tabla nueva (`message_forms`) queda con RLS automáticamente en Supabase.
 - 31 pruebas de backend (SQLite y PostgreSQL) y 13 comprobaciones en navegador real.
 
+## Novena revisión (auditoría del sitio, noviembre de 2026)
+
+Medida con Lighthouse 12 y axe-core 4.14 sobre una copia idéntica a producción, el
+Security/Performance Advisor de Supabase en vivo, pip-audit y npm audit.
+
+| Lighthouse | Antes | Después |
+| --- | --- | --- |
+| Celular: rendimiento / accesibilidad / buenas prácticas / SEO | 86 / 89 / 96 / 82 | 96 / 100 / 96* / 100 |
+| Computadora | 100 / 96 / 96 / 82 | 100 / 100 / 96* / 100 |
+
+\* El único aviso restante es el script de Google, que no carga en el entorno de pruebas sin internet.
+
+### 19. Alto — Cambiar la contraseña no cerraba las sesiones abiertas
+Una sesión robada seguía valiendo hasta 24 h tras restablecer la contraseña. **Parche:** el
+token lleva su fecha de emisión (`iat`) y `users.password_changed_at` invalida las anteriores.
+### 20. Medio — Sin Content-Security-Policy
+**Parche:** CSP estricta (scripts solo del sitio y de Google Sign-In; sin incrustación).
+### 21. Medio — 7 claves foráneas sin índice (Supabase Performance Advisor)
+**Parche:** índices en los modelos y migración idempotente al arrancar (`upgrade_schema`).
+### 22. Medio — Accesibilidad: contraste insuficiente (27 elementos) y estructura
+**Parche:** variante de acento para texto (`--accent-ink`, ≥4,5:1 en las 8 materias),
+región `<main>`, menús con nombre, nombres accesibles. axe: 0 problemas en 6 pantallas.
+### 23. Bajo — Vite con avisos de seguridad (solo servidor de desarrollo)
+**Parche:** Vite 8.3.5 en `package-lock.json`. npm audit: 0 vulnerabilidades.
+### 24. Bajo — Rendimiento y SEO
+Caché de un año para archivos con huella; portada sin carga diferida; meta descripción y
+Open Graph; `favicon.svg` y `robots.txt` reales; 404 real para archivos inexistentes; la
+comprobación de sesión al cargar ya no genera errores 401 en la consola.
+
 ## Lo que se revisó y no dio hallazgos
 
 - Control de acceso a conversaciones, archivos y eventos de agenda: todos

@@ -14,7 +14,7 @@ export default function MobileDrawer({ open, onClose }) {
     <div id="mobile-drawer" className={open ? 'open' : ''} onClick={(e) => e.target.id === 'mobile-drawer' && onClose()}>
       <div className="drawer-panel">
         <button id="drawer-close" aria-label="Cerrar menú" onClick={onClose}>✕</button>
-        <nav>
+        <nav aria-label="Menú principal">
           <a href="/#beneficios" onClick={onClose}>Beneficios</a>
           <a href="/#que-hace" onClick={onClose}>Qué puede hacer</a>
           <a href="/#como-funciona" onClick={onClose}>Cómo funciona</a>

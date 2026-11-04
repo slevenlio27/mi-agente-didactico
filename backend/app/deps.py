@@ -1,3 +1,4 @@
+import datetime
 from fastapi import Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 
@@ -32,6 +33,14 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> models.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuario no encontrado."
         )
+    # Sesión anterior a un cambio de contraseña → ya no vale (p. ej., una sesión robada)
+    if user.password_changed_at is not None:
+        changed = int(user.password_changed_at.replace(tzinfo=datetime.timezone.utc).timestamp())
+        if int(payload.get("iat", 0)) < changed:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Tu contraseña cambió. Vuelve a iniciar sesión.",
+            )
 
     return user
 
