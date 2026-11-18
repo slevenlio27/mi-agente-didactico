@@ -74,7 +74,8 @@ def _fecha(d: datetime.date) -> str:
     return f"{d.day} de {MESES[d.month - 1]} de {d.year}"
 
 
-def build_plan_docx(contenido: str, titulo_doc: str, subtitulo: str = "", datos: list | None = None) -> bytes:
+def build_plan_docx(contenido: str, titulo_doc: str, subtitulo: str = "", datos: list | None = None,
+                    titulo_datos: str = "Datos de la planificación") -> bytes:
     """contenido: texto de la IA. datos: filas (etiqueta, valor) para la tabla inicial."""
     doc = Document()
     sec = doc.sections[0]
@@ -104,7 +105,7 @@ def build_plan_docx(contenido: str, titulo_doc: str, subtitulo: str = "", datos:
         p = doc.add_paragraph(); r = p.add_run(subtitulo); r.font.size = Pt(13); r.font.color.rgb = GRIS
 
     if datos:
-        doc.add_paragraph("Datos de la planificación", style="Heading 1")
+        doc.add_paragraph(titulo_datos, style="Heading 1")
         tabla = doc.add_table(rows=0, cols=2); tabla.style = "Table Grid"; tabla.alignment = WD_TABLE_ALIGNMENT.CENTER
         tabla.autofit = False
         for etiqueta, valor in datos:
@@ -140,6 +141,9 @@ def build_plan_docx(contenido: str, titulo_doc: str, subtitulo: str = "", datos:
             _texto_con_etiqueta(doc.add_paragraph(style="List Number"), _limpia(mn.group(2)))
         elif es_markdown_titulo or _es_titulo(texto):
             texto = texto.rstrip(":")
+            if primer_titulo and (_titulo_legible(texto) if texto.isupper() else texto).strip().lower() == titulo_doc.strip().lower():
+                primer_titulo = False
+                continue
             doc.add_paragraph(_titulo_legible(texto) if texto.isupper() else texto,
                               style="Heading 1" if primer_titulo or "SESIÓN" not in texto.upper() else "Heading 2")
             primer_titulo = False
@@ -152,3 +156,15 @@ def build_plan_docx(contenido: str, titulo_doc: str, subtitulo: str = "", datos:
 
 def fecha_hoy() -> str:
     return _fecha(datetime.date.today())
+
+
+def first_heading(contenido: str) -> str | None:
+    """Primer título del texto de la IA (línea en MAYÚSCULAS o con #), en formato legible."""
+    for linea in (contenido or "").splitlines():
+        t = _limpia(linea)
+        if t and (_es_titulo(t) or linea.lstrip().startswith("#")):
+            t = t.rstrip(":")
+            return _titulo_legible(t) if t.isupper() else t
+        if t:
+            break   # el primer párrafo no es un título: no hay encabezado inicial
+    return None

@@ -13,7 +13,7 @@ from ..config import settings
 from ..storage import StorageError, storage
 from ..rate_limit import rate_limit
 from .. import planning
-from ..plan_docx import build_plan_docx, fecha_hoy
+from ..plan_docx import build_plan_docx, fecha_hoy, first_heading
 from fastapi.responses import Response
 from urllib.parse import quote
 import re as _re
@@ -319,10 +319,15 @@ def download_plan_docx(
     msg = msgs[idx]
 
     # El formulario más reciente antes de esta respuesta aporta el contexto de la planificación
-    form = next((m.form for m in reversed(msgs[:idx]) if m.form is not None and m.form.enviado), None)
+    # El formulario solo aporta sus datos cuando esta respuesta salió de él (justo después de sus respuestas)
+    _mark_plans(msgs)
+    form = next((m.form for m in reversed(msgs[:idx]) if m.form is not None and m.form.enviado), None) if msg.es_plan else None
     profile = db.query(models.TeacherProfile).filter(models.TeacherProfile.user_id == user.id).first()
     respuestas = (form.respuestas or {}) if form else {}
-    salida = respuestas.get("salida") or "Planificación"
+    # Con formulario: el tipo de planificación elegido. Sin formulario (respuesta normal del chat):
+    # el título de la conversación, que la app genera a partir de la primera pregunta del docente.
+    salida = respuestas.get("salida") or first_heading(msg.content) or \
+        (session.title if session.title != "Nueva conversación" else "Respuesta del asistente")
     datos = [("Docente", user.full_name or user.email)]
     if profile and profile.materia:
         datos.append(("Materia", profile.materia))
@@ -338,9 +343,10 @@ def download_plan_docx(
 
     contenido = build_plan_docx(
         msg.content, titulo_doc=salida,
-        subtitulo=(form.titulo if form else session.title) or "", datos=datos,
+        subtitulo=(form.titulo if form else "") or "", datos=datos,
+        titulo_datos="Datos de la planificación" if form else "Datos del documento",
     )
-    base = _re.sub(r"[^\w\-]+", "_", f"{salida} {form.titulo if form else session.title}", flags=_re.UNICODE).strip("_")[:80] or "planificacion"
+    base = _re.sub(r"[^\w\-]+", "_", f"{salida} {form.titulo if form else ''}", flags=_re.UNICODE).strip("_")[:80] or "respuesta"
     nombre = f"{base}.docx"
     ascii_nombre = nombre.encode("ascii", "ignore").decode() or "planificacion.docx"
     return Response(

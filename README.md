@@ -155,9 +155,11 @@ Abre `http://localhost:5173`. Regístrate con un correo y contraseña, e inicia 
   respuestas y el perfil; el docente puede seguir ajustándola en la conversación.
 - Solo se analiza cuando el docente lo pide (consume cuota de su clave de Gemini). El
   backend valida todo lo que devuelve la IA y las respuestas del formulario.
-- Debajo de la planificación aparece **«📄 Descargar en Word»**: un .docx editable con
-  título, tabla de datos (docente, materia, documento base y respuestas del formulario),
-  sesiones como subtítulos, listas reales de Word y numeración de páginas.
+- Debajo de **cada respuesta del asistente** (planificaciones, rúbricas, cuestionarios…)
+  aparece **«📄 Descargar en Word»**: un .docx editable con
+  título (el tipo de planificación elegido o el primer encabezado de la respuesta), tabla de
+  datos (docente, materia y, si viene del formulario, documento base y respuestas), sesiones
+  como subtítulos, listas reales de Word y numeración de páginas.
 
 **¿Olvidaste tu contraseña?**
 - En la ventana de inicio de sesión, el docente pulsa «¿Olvidaste tu contraseña?» y

@@ -282,7 +282,7 @@ export default function ChatWidget() {
                 </div>
               )}
               {m.content}
-              {m.es_plan && (
+              {m.role === 'assistant' && m.content.trim().length >= 40 && (
                 <button className="docx-btn" onClick={() => handleDownloadDocx(m.id)} disabled={downloading === m.id}>
                   {downloading === m.id ? 'Generando documento…' : '📄 Descargar en Word'}
                 </button>
